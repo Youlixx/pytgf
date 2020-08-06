@@ -98,8 +98,8 @@ class WindowedGame(Game):
                  width: int = 800, height: int = 600, full_screen: bool = True, hide_cursor: bool = False,
                  glsl_version: int = 330, shader_world: tuple = None, shader_sprite: tuple = None,
                  tick_per_second: float = 60, frame_per_second: float = 60, multi_threading: bool = True,
-                 default_tile_collision_handler: bool = True, default_entity_collision_handler: bool = True,
-                 default_gui_handler: bool = True):
+                 safe_mode: bool = True, default_tile_collision_handler: bool = True,
+                 default_entity_collision_handler: bool = True, default_gui_handler: bool = True):
         """
         Initializes the WindowedGame.
 
@@ -133,6 +133,8 @@ class WindowedGame(Game):
             The frame rate of the loop. It correspond to the number of times the frame will be rendered per second.
         multi_threading: bool, optional
             Enables the multi-threading mode if set to True.
+        safe_mode: bool, optional
+            Enables the update function safe mode (preventing infinite loop) if set to True.
         default_tile_collision_handler: bool, optional
             Registers the default tile collision event handler if set to True.
         default_entity_collision_handler: bool, optional
@@ -152,16 +154,15 @@ class WindowedGame(Game):
 
         self.input_handler = local_window
 
-        self._loop = WindowRenderLoop(
-            tick_per_second, frame_per_second, self.update, self.render, self.close, self.input_handler
-        )
+        self._loop = WindowRenderLoop(tick_per_second, frame_per_second, self.update, self.render, self.input_handler)
 
         Game.__init__(
             self, tile_size, viewport, scale=scale, standalone=False, glsl_version=glsl_version,
             shader_world=shader_world, shader_sprite=shader_sprite, tick_per_second=tick_per_second,
-            frame_per_second=frame_per_second, multi_threading=multi_threading, default_gui_handler=default_gui_handler,
+            frame_per_second=frame_per_second, multi_threading=multi_threading, safe_mode=safe_mode,
             default_tile_collision_handler=default_tile_collision_handler,
-            default_entity_collision_handler=default_entity_collision_handler
+            default_entity_collision_handler=default_entity_collision_handler,
+            default_gui_handler=default_gui_handler
         )
 
     def render(self, frame: int) -> None:
@@ -178,13 +179,25 @@ class WindowedGame(Game):
 
         self.resources.update()
 
-    def close(self) -> None:
+    def __del__(self) -> None:
         """
         Closes the game (this function should clean up the memory).
         """
 
-        super().close()
-
-        self.resources.clear()
-
         self.input_handler.should_close = True
+
+        super().__del__()
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "WindowedGame[input_handler=" + str(self.input_handler) + ", resources=" + str(self.resources) + ", " + \
+               "world=" + str(self.world) + ", camera=" + str(self.camera) + ", gui=" + str(self.gui) + ", " + \
+               "multi_threading=" + str(self._multi_threading) + ", safe_mode=" + str(self._safe_mode) + "]"

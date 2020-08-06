@@ -8,6 +8,8 @@ from time import sleep
 
 import numpy
 import moderngl
+import traceback
+import sys
 
 DEFAULT_SHADER_SPRITE_VERTEX = """#version 330
 
@@ -316,6 +318,18 @@ class ProjectionMatrix:
 
         return numpy.array((transformed[0, 0], transformed[1, 0]), dtype=numpy.float32)
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "ProjectionMatrix[matrix=" + str(self.matrix) + "]"
+
 
 class Camera:
     """
@@ -332,8 +346,6 @@ class Camera:
         The position vector of the center point.
     viewport: numpy.ndarray
         The viewport of the camera.
-    position_matrix: ProjectionMatrix
-        The projection matrix which translates the rendering to the camera position.
     projection_matrix: ProjectionMatrix
         The projection matrix of the 2D orthographic projection.
 
@@ -355,10 +367,9 @@ class Camera:
 
         self._size = array_format(size, dtype=numpy.float32)
         self._position = array_format((0, 0), dtype=numpy.float32)
+        self._last_position = array_format((0, 0), dtype=numpy.float32)
 
         self.viewport = self.size / 2
-
-        self.position_matrix = ProjectionMatrix()
 
         self.projection_matrix = ProjectionMatrix(). \
             orthographic(- self.viewport[0], self.viewport[0], - self.viewport[1], self.viewport[1])
@@ -368,6 +379,9 @@ class Camera:
         """
         The position property representing the position of the center point of the camera.
         """
+
+        if not numpy.array_equal(self._position, self._last_position):
+            pass
 
         return self._position
 
@@ -381,8 +395,6 @@ class Camera:
         position: [tuple, numpy.ndarray]
             The position of the center point of the camera.
         """
-
-        self.position_matrix.translate((position[0] - self._position[0], self._position[1] - position[1]))
 
         self._position = array_format(position, dtype=numpy.float32)
 
@@ -411,29 +423,17 @@ class Camera:
         self.projection_matrix = ProjectionMatrix(). \
             orthographic(- self.viewport[0], self.viewport[0], - self.viewport[1], self.viewport[1])
 
-    def transform_world(self, position: numpy.ndarray) -> numpy.ndarray:
+    def __str__(self) -> str:
         """
-        Transforms the position vector into the camera coordinate system.
-
-        Transforms the coordinate of a point expressed in the screen referential to the local camera coordinate system.
-
-        Parameters
-        ----------
-        position: numpy.ndarray
-            The screen relative position vector.
+        Returns a description string of the object.
 
         Returns
         -------
-        transformed_position: numpy.ndarray
-            The new position vector expressed in the camera coordinate system.
+        string: str
+            The string object description.
         """
 
-        transform = ProjectionMatrix(self.projection_matrix.matrix).inverse_transform(position)
-
-        transform[0] = self.position[0] - transform[0]
-        transform[1] = self.position[1] + transform[1]
-
-        return transform
+        return "Camera[position=" + str(self._position) + ", size=" + str(self.size) + "]"
 
 
 class Texture:
@@ -519,6 +519,18 @@ class Texture:
         else:
             raise ValueError("The sampler used must be located between 0 and 31.")
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "Texture[width=" + str(self._width) + ", height=" + str(self._height) + "]"
+
 
 class Model:
     """
@@ -583,6 +595,18 @@ class Model:
         """
 
         self._vao.render()
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "Model[]"
 
 
 class ShaderProgram:
@@ -656,6 +680,18 @@ class ShaderProgram:
                 self.program[name].value = tuple(value.reshape(-1))
             else:
                 self.program[name].value = value
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "ShaderProgram[]"
 
 
 class SpriteSet:
@@ -743,6 +779,18 @@ class SpriteSet:
 
         return pointer + 1, texture
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "SpriteSet[]"
+
 
 class TileSet:
     """
@@ -811,6 +859,19 @@ class TileSet:
         shader.set_uniform(ShaderProgram.UNIFORM_TILES_WIDTH, self.width)
         shader.set_uniform(ShaderProgram.UNIFORM_TILES_HEIGHT, self.height)
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "TileSet[width=" + str(self.width) + ", height=" + str(self.height) + ", " + \
+               "texture=" + str(self._texture) + "]"
+
 
 class ResourceManager(TileManager):
     """
@@ -844,6 +905,8 @@ class ResourceManager(TileManager):
 
     Methods
     -------
+    attach_frame_buffer(width, height)
+        Attaches a new frame buffer in which the rendering will be performed.
     register_collision_map(collision_map)
         Registers a new collision map.
     register_tile(id_collision_map, id_texture)
@@ -866,8 +929,10 @@ class ResourceManager(TileManager):
         Returns the collision map associated to the tile.
     get_id_texture(id_tile)
         Returns the texture associated to the tile.
-    get_last_frame_buffer()
+    get_last_frame_buffer(index, viewport)
         Returns the latest rendered frame.
+    render_model(model)
+        Renders a model.
     render_background(name, camera)
         Renders the background.
     render_sprite(renderable, camera)
@@ -909,12 +974,12 @@ class ResourceManager(TileManager):
 
         if not standalone:
             self.context = moderngl.create_context(require=glsl_version)
-            self._frame_buffer = self.context.screen
+            self._frame_buffers = [self.context.screen]
         else:
             self.context = moderngl.create_standalone_context(require=glsl_version)
-            self._frame_buffer = self.context.framebuffer([self.context.renderbuffer((width, height))])
+            self._frame_buffers = [self.context.framebuffer([self.context.renderbuffer((width, height))])]
 
-        self._frame_buffer.use()
+        self._frame_buffers[0].use()
 
         self.context.clear(1.0, 1.0, 1.0, 1.0)
         self.context.enable(moderngl.BLEND)
@@ -956,6 +1021,8 @@ class ResourceManager(TileManager):
 
         self._background_textures = []
         self._backgrounds = {}
+
+        self._reuse = False
 
     def __del__(self) -> None:
         """
@@ -1081,12 +1148,30 @@ class ResourceManager(TileManager):
 
         self.sprite_sets[sprite_set].register_sprite_animation(period, animation)
 
-    def get_last_frame_buffer(self, viewport=None) -> numpy.ndarray:
+    def attach_frame_buffer(self, width: int, height: int) -> None:
+        """
+        Attaches a new frame buffer in which the rendering will be performed.
+
+        Parameters
+        ----------
+        width: int
+            The width of the frame.
+        height: int
+            The height of the frame.
+        """
+
+        self._frame_buffers.append(self.context.framebuffer([self.context.renderbuffer((width, height))]))
+
+        self._reuse = True
+
+    def get_frame_buffer(self, index: int, viewport=None) -> numpy.ndarray:
         """
         Returns the latest rendered frame.
 
         Parameters
         ----------
+        index: int
+            The index of the frame buffer (0 corresponds to the screen).
         viewport: tuple of int
             The part of the screen to buffer (takes the full frame if set to None).
 
@@ -1096,14 +1181,36 @@ class ResourceManager(TileManager):
             The latest rendered frame.
         """
 
+        frame_buffer = self._frame_buffers[index]
+
         if viewport is None:
-            viewport = (0, 0) + self._frame_buffer.size
+            viewport = (0, 0) + frame_buffer.size
 
         return numpy.flip(numpy.frombuffer(
-            self._frame_buffer.read(viewport=viewport), dtype=numpy.uint8
-        ).reshape(
-            (viewport[3], viewport[2], 3)), axis=0
-        )
+            frame_buffer.read(viewport=viewport), dtype=numpy.uint8
+        ).reshape((viewport[3], viewport[2], 3)), axis=0)
+
+    def render_model(self, model: Model) -> None:
+        """
+        Renders a model.
+
+        Renders a model, either world or sprite. This function should be called after all the necessary uniforms of
+        the associated shader program are set. The model will be rendered to every attached frame buffer.
+
+        Parameters
+        ----------
+        model: Model
+            The model to render.
+        """
+
+        if not self._reuse:
+            model.render()
+
+            return
+
+        for frame_buffer in self._frame_buffers:
+            frame_buffer.use()
+            model.render()
 
     def render_background(self, name: str, camera: Camera) -> None:
         """
@@ -1130,7 +1237,7 @@ class ResourceManager(TileManager):
                     position = ProjectionMatrix().translate(position_delta + (i, j)).scale((2, 2))
 
                     self.shader_sprite.set_uniform(ShaderProgram.UNIFORM_POSITION, position.matrix)
-                    self.model_sprite.render()
+                    self.render_model(self.model_sprite)
 
     def render_sprite(self, renderable: Renderable, camera: Camera) -> None:
         """
@@ -1167,14 +1274,14 @@ class ResourceManager(TileManager):
             (renderable.position + renderable.texture_bounds.bounds / 2 + renderable.texture_bounds.position)
         ).scale(
             (-1, 1)
-        ).dot(
-            camera.position_matrix.matrix
+        ).translate(
+            (camera.position[0], - camera.position[1])
         ).scale(
             (self.scale, self.scale)
         )
 
         self.shader_sprite.set_uniform(ShaderProgram.UNIFORM_POSITION, position.matrix)
-        self.model_sprite.render()
+        self.render_model(self.model_sprite)
 
         renderable.animation_pointer = animation_pointer
 
@@ -1202,6 +1309,19 @@ class ResourceManager(TileManager):
             )
 
         renderable.animation_pointer = animation_pointer
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "ResourceManager[tile_size=" + str(self.tile_size) + ", scale=" + str(self.scale) + ", " + \
+               "tile_set=" + str(self.tile_set) + "]"
 
 
 class LevelRenderer:
@@ -1268,8 +1388,8 @@ class LevelRenderer:
             (0.5, 0.5)
         ).scale(
             (- self._scale * self._width, self._scale * self._height)
-        ).dot(
-            camera.position_matrix.matrix
+        ).translate(
+            (camera.position[0], - camera.position[1])
         ).scale(
             (self._resources.scale, self._resources.scale)
         )
@@ -1277,7 +1397,7 @@ class LevelRenderer:
         self._resources.shader_world.set_uniform(ShaderProgram.UNIFORM_POSITION, position.matrix)
         self._resources.shader_world.set_uniform(ShaderProgram.UNIFORM_PROJECTION, camera.projection_matrix.matrix)
 
-        self._resources.model_world.render()
+        self._resources.render_model(self._resources.model_world)
 
     def update_tiles(self, tiles: numpy.ndarray):
         """
@@ -1303,6 +1423,18 @@ class LevelRenderer:
                 self._bind()
             else:
                 self._texture.bind(Texture.SAMPLER_LEVEL)
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "LevelRenderer[texture=" + str(self._texture) + "]"
 
 
 class WorldRenderer:
@@ -1368,6 +1500,18 @@ class WorldRenderer:
                     else:
                         self._resources.increment_animation_pointer(world_object)
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "WorldRenderer[world=" + str(self._world) + ", level_renderer=" + str(self._level_renderer) + "]"
+
 
 class RenderLoop(LogicLoop):
     """
@@ -1384,7 +1528,7 @@ class RenderLoop(LogicLoop):
     """
 
     def __init__(self, tick_per_second: float, frame_per_second: float, function_logic: callable,
-                 function_render: callable, function_error: callable):
+                 function_render: callable):
         """
         Initializes the RenderLoop.
 
@@ -1398,20 +1542,24 @@ class RenderLoop(LogicLoop):
             The logic function of the loop called each tick.
         function_render: callable
             The render function of the loop called each frame.
-        function_error: callable
-            The error function called whenever an exception occurs within the loop.
         """
 
-        LogicLoop.__init__(self, tick_per_second, function_logic, function_error)
+        LogicLoop.__init__(self, tick_per_second, function_logic)
 
         self._function_render = function_render
         self._frame_period = 1.0 / frame_per_second
+
+        self._reference_extra_render = 0
 
         self._frame = 0
 
     def __call__(self, number_of_ticks: int = None, max_speed: bool = False) -> None:
         """
         Runs the main logic function.
+
+        Runs the main logic function for a given number of tick. At max speed, the logic is done as fast as possible,
+        but the rendering is still synchronized with the frame rate. Note that if an exception is raised, the loop will
+        stop.
 
         Parameters
         ----------
@@ -1425,8 +1573,8 @@ class RenderLoop(LogicLoop):
         target_tick = self._tick + number_of_ticks if number_of_ticks else -1
 
         current_time = LogicLoop._get_current_time()
-        reference_logic = current_time
-        reference_render = current_time
+        reference_logic = current_time - self._reference_extra_logic
+        reference_render = current_time - self._reference_extra_render
 
         self._running = True
 
@@ -1442,27 +1590,38 @@ class RenderLoop(LogicLoop):
 
             else:
                 while self._running and self._tick != target_tick:
-                    if max_speed or LogicLoop._get_current_time() - reference_logic >= self._tick_period:
+                    current_time = LogicLoop._get_current_time()
+
+                    if current_time - reference_logic >= self._tick_period:
                         self._do_logic()
 
-                        reference_logic += self._tick_period
+                        while current_time - reference_logic >= self._tick_period:
+                            reference_logic += self._tick_period
 
-                    if LogicLoop._get_current_time() - reference_render >= self._frame_period:
+                    current_time = LogicLoop._get_current_time()
+
+                    if current_time - reference_render >= self._frame_period:
                         self._do_render()
 
-                        reference_render += self._frame_period
+                        while current_time - reference_render >= self._frame_period:
+                            reference_render += self._frame_period
 
                     sleep_time = min(self._tick_period + reference_logic, self._frame_period + reference_render) - \
                         LogicLoop._get_current_time()
 
                     if sleep_time > 0:
                         sleep(sleep_time)
-        except BaseException:
-            self._function_error()
+        except BaseException as error:
+            print("An error occurred during the game loop:", file=sys.stderr)
+            traceback.print_tb(error.__traceback__)
+            print(error.__class__.__name__ + ":", error, file=sys.stderr)
+        finally:
+            current_time = LogicLoop._get_current_time()
 
-            raise
+            self._reference_extra_logic = current_time - reference_logic
+            self._reference_extra_render = current_time - reference_render
 
-        self._running = False
+            self._running = False
 
     def _do_render(self) -> None:
         """
@@ -1472,3 +1631,16 @@ class RenderLoop(LogicLoop):
         self._function_render(self._frame)
 
         self._frame += 1
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "RenderLoop[tick=" + str(self._tick) + ", frame=" + str(self._frame) + ", " + \
+               "running=" + str(self._running) + "]"

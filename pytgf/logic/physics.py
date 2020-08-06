@@ -10,6 +10,8 @@ from time import sleep
 
 import numpy
 import datetime
+import traceback
+import sys
 
 
 def array_format(vector: [tuple, numpy.ndarray], dtype: type = numpy.int32) -> numpy.ndarray:
@@ -146,7 +148,7 @@ class AxisAlignedBoundingBox:
         """
 
         return numpy.logical_and(
-            * (self.position <= other.position) * (self.position + self.bounds >= other.position + self.bounds)
+            * (self.position <= other.position) * (self.position + self.bounds >= other.position + other.bounds)
         )
 
     def inner_point(self, point: numpy.ndarray) -> bool:
@@ -243,6 +245,19 @@ class AxisAlignedBoundingBox:
 
         return AxisAlignedBoundingBox(self.position, self.bounds, dtype=dtype)
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "AxisAlignedBoundingBox[position=" + str(self._position) + ", bounds=" + str(self._bounds) + ", " + \
+               "dtype=" + str(self._dtype) + "]"
+
 
 class WorldObject:
     """
@@ -316,6 +331,18 @@ class WorldObject:
         """
 
         self.bounding_box.bounds = bounds
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "WorldObject[position=" + str(self.position) + ", bounds=" + str(self.bounds) + "]"
 
 
 class PhysicsObject(WorldObject):
@@ -451,6 +478,19 @@ class PhysicsObject(WorldObject):
         """
 
         self.colliders.clear()
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "PhysicsObject[position=" + str(self.position) + ", bounds=" + self.bounds + ", " + \
+               "collides_with_tiles=" + str(self.collides_with_tiles) + ", colliders=" + str(self.colliders) + "]"
 
 
 class Renderable(WorldObject):
@@ -614,6 +654,32 @@ class Renderable(WorldObject):
         """
 
         return self.id_animation_transition != -1
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        if self.is_transiting():
+            return "RenderableObject[position=" + str(self.position) + ", bounds=" + str(self.bounds) + ", " + \
+                   "texture_bounds=" + str(self.texture_bounds) + ", sprite_set=" + self.sprite_set + ", " + \
+                   "id_animation=" + str(self.id_animation) + ", " + \
+                   "id_animation_transition=" + str(self.id_animation_transition) + ", " + \
+                   "animation_pointer=" + str(self.animation_pointer) + ", angle=" + str(self.angle) + ", " + \
+                   "visible=" + str(self.visible) + ", flip_horizontally=" + str(self.flip_horizontally) + ", " + \
+                   "flip_vertically=" + str(self.flip_vertically) + "]"
+        else:
+            return "RenderableObject[position=" + str(self.position) + ", bounds=" + str(self.bounds) + ", " + \
+                   "texture_bounds=" + str(self.texture_bounds) + ", sprite_set=" + self.sprite_set + ", " + \
+                   "id_animation=" + str(self.id_animation) + ", " + \
+                   "animation_pointer=" + str(self.animation_pointer) + ", angle=" + str(self.angle) + ", " + \
+                   "visible=" + str(self.visible) + ", flip_horizontally=" + str(self.flip_horizontally) + ", " + \
+                   "flip_vertically=" + str(self.flip_vertically) + "]"
 
 
 class Particle(Renderable):
@@ -841,6 +907,34 @@ class Entity(PhysicsObject, Renderable):
 
         self._speed = array_format(speed)
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        if self.is_transiting():
+            return "Entity[position=" + str(self.position) + ", bounds=" + str(self.bounds) + ", " + \
+                   "texture_bounds=" + str(self.texture_bounds) + ", sprite_set=" + self.sprite_set + ", " + \
+                   "id_animation=" + str(self.id_animation) + ", " + \
+                   "id_animation_transition=" + str(self.id_animation_transition) + ", " + \
+                   "animation_pointer=" + str(self.animation_pointer) + ", angle=" + str(self.angle) + ", " + \
+                   "visible=" + str(self.visible) + ", flip_horizontally=" + str(self.flip_horizontally) + ", " + \
+                   "flip_vertically=" + str(self.flip_vertically) + ", " + \
+                   "collides_with_tiles=" + str(self.collides_with_tiles) + ", colliders=" + str(self.colliders) + "]"
+        else:
+            return "Entity[position=" + str(self.position) + ", bounds=" + str(self.bounds) + ", " + \
+                   "texture_bounds=" + str(self.texture_bounds) + ", sprite_set=" + self.sprite_set + ", " + \
+                   "id_animation=" + str(self.id_animation) + ", " + \
+                   "animation_pointer=" + str(self.animation_pointer) + ", angle=" + str(self.angle) + ", " + \
+                   "visible=" + str(self.visible) + ", flip_horizontally=" + str(self.flip_horizontally) + ", " + \
+                   "flip_vertically=" + str(self.flip_vertically) + ", " + \
+                   "collides_with_tiles=" + str(self.collides_with_tiles) + ", colliders=" + str(self.colliders) + "]"
+
 
 class CollisionMap:
     """
@@ -882,6 +976,20 @@ class CollisionMap:
         self.collide_south = collide_south
         self.collide_west = collide_west
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "CollisionMap[collide_north=" + str(self.collide_north) + ", " + \
+               "collide_east=" + str(self.collide_east) + ", collide_south=" + str(self.collide_south) + ", " + \
+               "collide_west=" + str(self.collide_west) + "]"
+
 
 class TileManager:
     """
@@ -898,7 +1006,7 @@ class TileManager:
 
     Methods
     -------
-    register_collision_map(collision_map)
+    register_collision_map(collide_north, collide_east, collide_south, collide_west)
         Registers a new collision map.
     register_tile(id_collision_map, id_texture)
         Registers a new tile.
@@ -923,7 +1031,8 @@ class TileManager:
         self._collision_maps = []
         self._tiles = []
 
-    def register_collision_map(self, collision_map: CollisionMap) -> None:
+    def register_collision_map(self, collide_north: bool, collide_east: bool, collide_south: bool,
+                               collide_west: bool) -> None:
         """
         Registers a new collision map.
 
@@ -931,11 +1040,17 @@ class TileManager:
 
         Parameters
         ----------
-        collision_map: CollisionMap
-            The collision map describing the collision behavior of a tile.
+        collide_north: bool
+            Enables the collision detection with the top edge of the tile if set to True.
+        collide_east: bool
+            Enables the collision detection with the right edge of the tile if set to True.
+        collide_south: bool
+            Enables the collision detection with the bottom edge of the tile if set to True.
+        collide_west: bool
+            Enables the collision detection with the left edge of the tile if set to True.
         """
 
-        self._collision_maps.append(collision_map)
+        self._collision_maps.append(CollisionMap(collide_north, collide_east, collide_south, collide_west))
 
     def register_tile(self, id_collision_map: int, id_texture: int) -> None:
         """
@@ -1005,6 +1120,18 @@ class TileManager:
 
         return self._tiles[id_tile - 1][1]
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "TileManager[tile_size=" + str(self.tile_size) + "]"
+
 
 class Direction:
     """
@@ -1020,6 +1147,8 @@ class Direction:
         Gives the direction obtained by a 90 degrees rotation counterclockwise.
     opposite(direction)
         Gives the direction obtained by a 180 degrees rotation.
+    get_name(direction)
+        Returns the name string of the direction.
     """
 
     DIRECTION_NONE = -1
@@ -1035,7 +1164,7 @@ class Direction:
 
         Parameters
         ----------
-        direction
+        direction: int
             The initial direction code.
 
         Returns
@@ -1056,7 +1185,7 @@ class Direction:
 
         Parameters
         ----------
-        direction
+        direction: int
             The initial direction code.
 
         Returns
@@ -1077,7 +1206,7 @@ class Direction:
 
         Parameters
         ----------
-        direction
+        direction: int
             The initial direction code.
 
         Returns
@@ -1090,6 +1219,33 @@ class Direction:
             return Direction.DIRECTION_NONE
 
         return (direction + 2) % 4
+
+    @staticmethod
+    def get_name(direction: int) -> str:
+        """
+        Returns the name string of the direction.
+
+        Parameters
+        ----------
+        direction: int
+            The direction.
+
+        Returns
+        -------
+        name: str
+            The direction name string.
+        """
+
+        if direction == Direction.DIRECTION_NONE:
+            return "NONE"
+        elif direction == Direction.DIRECTION_NORTH:
+            return "NORTH"
+        elif direction == Direction.DIRECTION_EAST:
+            return "EAST"
+        elif direction == Direction.DIRECTION_SOUTH:
+            return "SOUTH"
+        elif direction == Direction.DIRECTION_WEST:
+            return "WEST"
 
 
 class CollisionEvent(Event):
@@ -1127,6 +1283,19 @@ class CollisionEvent(Event):
         
         self.entity = entity
         self.direction = direction
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "CollisionEvent[tick=" + str(self.tick) + ", entity=" + str(self.entity) + ", " + \
+               "direction=" + Direction.get_name(self.direction) + "]"
 
 
 class CollisionWithTileEvent(CollisionEvent):
@@ -1199,6 +1368,20 @@ class CollisionWithTileEvent(CollisionEvent):
             event.entity.speed[0] = 0
         elif direction == Direction.DIRECTION_NORTH or direction == Direction.DIRECTION_SOUTH:
             event.entity.speed[1] = 0
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "CollisionWithTileEntityEvent[tick=" + str(self.tick) + ", entity=" + str(self.entity) + ", " + \
+               "direction=" + Direction.get_name(self.direction) + ", tile=" + str(self.tile) + ", " + \
+               "position=[" + str(self.position[0]) + " " + str(self.position[1]) + "]]"
 
 
 class CollisionWithEntityEvent(CollisionEvent):
@@ -1284,6 +1467,19 @@ class CollisionWithEntityEvent(CollisionEvent):
             event.entity.speed[axis] = 0
         else:
             event.other.speed[axis] = 0
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "CollisionWithEntityEvent[tick=" + str(self.tick) + ", entity=" + str(self.entity) + ", " + \
+               "other=" + str(self.other) + ", direction=" + Direction.get_name(self.direction) + "]"
 
 
 class MovableSegment:
@@ -1453,6 +1649,18 @@ class MovableSegment:
 
         return (self.high - other.low) / (other.speed - self.speed)
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "MovableSegment[low=" + str(self.low) + ", high=" + str(self.high) + ", speed=" + str(self.speed) + "]"
+
 
 class CollisionObject:
     """
@@ -1534,6 +1742,22 @@ class CollisionObject:
                 return True
 
         return False
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "CollisionObject[index=" + str(self.index) + ", bounding_box=" + str(self.bounding_box) + ", " + \
+               "bounding_box_expanded=" + str(self.bounding_box_expanded) + ", speed=" + str(self.speed) + ", " + \
+               "entity_type=" + str(self.entity_type) + ", " + \
+               "collides_with_tiles=" + str(self.collides_with_tiles) + ", colliders=" + str(self._colliders) + ", " + \
+               "local_time=" + str(self.local_time) + "]"
 
 
 class QuadTree:
@@ -1626,7 +1850,7 @@ class QuadTree:
             The object to insert in the tree.
         """
 
-        if self._center in collision_object.bounding_box_expanded:
+        if collision_object.bounding_box_expanded.inner_point(self._center):
             self._nodes.append(collision_object)
         else:
             if collision_object.bounding_box_expanded.position[0] <= self._center[0]:
@@ -1707,6 +1931,18 @@ class QuadTree:
                 unique.add(_id)
 
         return results
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "QuadTree[bounding_box=" + str(self._bounds) + "]"
 
 
 class CollisionPseudoEvent:
@@ -1840,6 +2076,26 @@ class CollisionPseudoEvent:
         """
 
         return hash(self.colliders + (self.time_of_impact, self.collision_type, self.collision_type))
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        if self.collision_type == CollisionPseudoEvent.COLLISION_ENTITY:
+            return "CollisionPseudoEvent[time_of_impact=" + str(self.time_of_impact) + ", type=ENTITY, " + \
+                   "collider=" + str(self.colliders[0]) + ", collided=" + str(self.colliders[1]) + ", " + \
+                   "direction=" + Direction.get_name(self.collision_direction) + "]"
+        elif self.collision_type == CollisionPseudoEvent.COLLISION_TILE:
+            return "CollisionPseudoEvent[time_of_impact=" + str(self.time_of_impact) + ", type=TILE, " + \
+                   "collider=" + str(self.colliders[0]) + ", tile=" + str(self.colliders[1]) + ", " + \
+                   "position=[" + str(self.colliders[2]) + " " + str(self.colliders[3]) + "], " + \
+                   "direction=" + Direction.get_name(self.collision_direction) + "]"
 
 
 class WorldUpdater:
@@ -2547,6 +2803,19 @@ class WorldUpdater:
 
         return -1
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "WorldUpdater[logic_area=" + str(self.logic_area) + ", logic_tile=" + str(self.logic_tile) + ", " + \
+               "logic_entity=" + str(self.logic_entity) + "]"
+
 
 class UnsolvedCollisionError(Exception):
     """
@@ -2557,6 +2826,18 @@ class UnsolvedCollisionError(Exception):
     handlers have to be deterministic regarding the update of the object, for instance, the speed vector of the
     colliding object should always be modified in a way that it does not instantly collides with the same other object.
     """
+
+    def __init__(self, event: CollisionPseudoEvent):
+        message = \
+            "The following event got fired twice in a single tick.\n\n\t" + str(event) + "\n\n" + \
+            "This probably means that this event will be reprocessed indefinitely by the handlers.\n" + \
+            "To avoid this kind of error, the collision event handlers should have to be deterministic regarding\n" + \
+            "the some properties of the speed vector; the colliding object should always be modified in a way it\n" + \
+            "does not instantly collide with the same object.\n" + \
+            "If you are sure of what you are doing and you think that this is error is not supposed to be raised,\n" + \
+            "you can disable the check of unsolved collision by setting the safe_mode to False."
+
+        Exception.__init__(self, message)
 
 
 class World:
@@ -2749,7 +3030,7 @@ class World:
             if world_object.should_be_destroyed:
                 to_destroy.append(world_object)
             else:
-                if isinstance(world_object, Entity):
+                if isinstance(world_object, Entity) and world_object.bounding_box in self.logic_area:
                     entities.append(world_object)
                     local_times.append(0.0)
 
@@ -2768,7 +3049,7 @@ class World:
 
             for event in events:
                 if self._safe_mode and event in past_events:
-                    raise UnsolvedCollisionError()
+                    raise UnsolvedCollisionError(event)
 
                 if event.collision_type == CollisionPseudoEvent.COLLISION_ENTITY:
                     for collider in event.colliders:
@@ -2817,6 +3098,19 @@ class World:
 
         self.world_objects.append(world_object)
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "World[logic_area=" + str(self.logic_area) + ", logic_tile=" + str(self.logic_tile) + ", " + \
+               "logic_entity=" + str(self.logic_entity) + ", background=" + self.background + "]"
+
 
 class LogicLoop:
     """
@@ -2831,7 +3125,7 @@ class LogicLoop:
         Stops the main loop.
     """
 
-    def __init__(self, tick_per_second: float, function_logic: callable, function_error: callable):
+    def __init__(self, tick_per_second: float, function_logic: callable):
         """
         Initializes the LogicLoop.
 
@@ -2841,13 +3135,12 @@ class LogicLoop:
             The tick rate of the loop. It correspond to the number of times the logic will be performed per second.
         function_logic: callable
             The logic function of the loop called each tick.
-        function_error: callable
-            The error function called whenever an exception occurs within the loop.
         """
 
         self._function_logic = function_logic
-        self._function_error = function_error
         self._tick_period = 1.0 / tick_per_second
+
+        self._reference_extra_logic = 0
 
         self._tick = 0
         self._running = False
@@ -2855,6 +3148,9 @@ class LogicLoop:
     def __call__(self, number_of_ticks: int = None, max_speed: bool = False) -> None:
         """
         Runs the main logic function.
+
+        Runs the main logic function for a given number of tick. At max speed, the logic is done as fast as possible.
+        Note that if an exception is raised, the loop will stop.
 
         Parameters
         ----------
@@ -2868,7 +3164,7 @@ class LogicLoop:
         target_tick = self._tick + number_of_ticks if number_of_ticks else -1
 
         current_time = LogicLoop._get_current_time()
-        reference_logic = current_time
+        reference_logic = current_time - self._reference_extra_logic
 
         self._running = True
 
@@ -2878,21 +3174,26 @@ class LogicLoop:
                     self._do_logic()
             else:
                 while self._running and self._tick != target_tick:
-                    if LogicLoop._get_current_time() - reference_logic >= self._tick_period:
+                    current_time = LogicLoop._get_current_time()
+
+                    if current_time - reference_logic >= self._tick_period:
                         self._do_logic()
 
-                        reference_logic += self._tick_period
+                        while current_time - reference_logic >= self._tick_period:
+                            reference_logic += self._tick_period
 
                     sleep_time = self._tick_period + reference_logic - LogicLoop._get_current_time()
 
                     if sleep_time > 0:
                         sleep(sleep_time)
-        except BaseException:
-            self._function_error()
+        except BaseException as error:
+            print("An error occurred during the game loop:", file=sys.stderr)
+            traceback.print_tb(error.__traceback__)
+            print(error.__class__.__name__ + ":", error, file=sys.stderr)
+        finally:
+            self._reference_extra_logic = LogicLoop._get_current_time() - reference_logic
 
-            raise
-
-        self._running = False
+            self._running = False
 
     def _do_logic(self) -> None:
         """
@@ -2921,3 +3222,15 @@ class LogicLoop:
         """
 
         return datetime.datetime.utcnow().timestamp()
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "LogicLoop[tick=" + str(self._tick) + ", running=" + str(self._running) + "]"

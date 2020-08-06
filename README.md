@@ -1,4 +1,4 @@
-# pytgl - Python Tile based Game Library
+# pytgf - Simple python tile based game framework
 A simple implementation of a tile engine, including a physical and graphical engine based on OpenGL.
 The python package embbed the following functions:
 - a complete event pipeline, for pure event-driven programming.
@@ -10,7 +10,7 @@ The python package embbed the following functions:
 Your GPU should support OpenGL 3.3.0 and GLSL 3.30 (unless you create custom shaders compatible with previous versions).
 
 ## Installation
-This package can be installed using `pip install pytgl`.
+This package can be installed using `pip install pytgf`.
 
 ## Dependencies
 The library requires the following packages (the latest stable versions should be used):

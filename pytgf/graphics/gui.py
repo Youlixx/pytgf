@@ -102,6 +102,19 @@ class GUIFont:
 
         return 0
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUIFont[sprite_set=" + self.sprite_set + ", width=" + str(self.width) + ", " + \
+               "height=" + str(self.height) + ", char_map=" + str(self._char_map) + "]"
+
 
 class GUIBorder:
     """
@@ -161,7 +174,7 @@ class GUIBorder:
                 )
 
                 resources.shader_sprite.set_uniform(ShaderProgram.UNIFORM_POSITION, position.matrix)
-                resources.model_sprite.render()
+                resources.render_model(resources.model_sprite)
 
         for i in range(2):
             _, texture = resources.sprite_sets[self._sprite_set].get_texture(4 + i, 0)
@@ -175,7 +188,7 @@ class GUIBorder:
             )
 
             resources.shader_sprite.set_uniform(ShaderProgram.UNIFORM_POSITION, position.matrix)
-            resources.model_sprite.render()
+            resources.render_model(resources.model_sprite)
 
         for j in range(2):
             _, texture = resources.sprite_sets[self._sprite_set].get_texture(6 + j, 0)
@@ -189,7 +202,7 @@ class GUIBorder:
             )
 
             resources.shader_sprite.set_uniform(ShaderProgram.UNIFORM_POSITION, position.matrix)
-            resources.model_sprite.render()
+            resources.render_model(resources.model_sprite)
 
         _, texture = resources.sprite_sets[self._sprite_set].get_texture(8, 0)
 
@@ -202,7 +215,19 @@ class GUIBorder:
         )
 
         resources.shader_sprite.set_uniform(ShaderProgram.UNIFORM_POSITION, position.matrix)
-        resources.model_sprite.render()
+        resources.render_model(resources.model_sprite)
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUIBorder[sprite_set=" + self._sprite_set + ", outline_thickness=" + str(self._outline_thickness) + "]"
 
 
 class GUIComponent:
@@ -363,6 +388,20 @@ class GUIComponent:
 
         self.focused = False
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUIComponent[bounds=" + str(self.bounds) + ", max_size=" + str(self.max_size) + ", " + \
+               "focused=" + str(self.focused) + ", border=" + str(self.border) + ", " + \
+               "visible=" + str(self.visible) + ", allow_focus=" + str(self.allow_focus) + "]"
+
 
 class GUILayout:
     """
@@ -474,6 +513,18 @@ class GUILayout:
 
         self.children = []
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUILayout[bounds=" + str(self.bounds) + ", children=" + str([str(c) for c in self.children]) + "]"
+
 
 class GUIAbsoluteLayout(GUILayout):
     """
@@ -541,6 +592,19 @@ class GUIAbsoluteLayout(GUILayout):
                 return True
 
         return False
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUIAbsoluteLayout[bounds=" + str(self.bounds) + ", " + \
+               "children=" + str([str(c) for c in self.children]) + "]"
 
 
 class GUIListLayout(GUILayout):
@@ -646,12 +710,27 @@ class GUIListLayout(GUILayout):
         for component in self.children:
             component.max_size = (self.bounds - component.bounds.position) - 2 * self.padding
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUIListLayout[bounds=" + str(self.bounds) + ", padding=" + str(self.padding) + \
+               "children=" + str([str(c) for c in self.children]) + "]"
+
 
 class GUIContainer(GUIComponent):
     """
 
     Attributes
     ----------
+    children: list of GUIComponent
+        The list of components of the container.
     bounds: AxisAlignedBoundingBox
         The bounding box of the component.
     max_size: numpy.ndarray
@@ -709,6 +788,27 @@ class GUIContainer(GUIComponent):
         self._layout = layout
 
         self._update_layout()
+
+    @property
+    def children(self) -> list:
+        """
+        The children property containing the children components of the container.
+        """
+
+        return self._layout.children
+
+    @children.setter
+    def children(self, children: list) -> None:
+        """
+        Setter function for the children list.
+
+        Parameters
+        ----------
+        children: list of GUIComponent
+            This list of children components of the container.
+        """
+
+        self._layout.children = children
 
     def _update_layout(self) -> None:
         """
@@ -824,24 +924,27 @@ class GUIContainer(GUIComponent):
             elif child.focused:
                 return child
 
-    def add_child(self, component: GUIComponent) -> None:
-        """
-        Adds a new component to the container.
-
-        Parameters
-        ----------
-        component: GUIComponent
-            The new component.
-        """
-
-        self._layout.add_child(component)
-
     def clear(self) -> None:
         """
         Clears the container from its components.
         """
 
         self._layout.clear()
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUIContainer[bounds=" + str(self.bounds) + ", max_size=" + str(self.max_size) + ", " + \
+               "layout=" + str(self._layout) + ", focused=" + str(self.focused) + ", " + \
+               "border=" + str(self.border) + ", visible=" + str(self.visible) + ", " + \
+               "allow_focus=" + str(self.allow_focus) + "]"
 
 
 class GUILabel(GUIComponent):
@@ -957,7 +1060,22 @@ class GUILabel(GUIComponent):
                 ))
 
                 resources.shader_sprite.set_uniform(ShaderProgram.UNIFORM_POSITION, position.matrix)
-                resources.model_sprite.render()
+                resources.render_model(resources.model_sprite)
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUILabel[bounds=" + str(self.bounds) + ", max_size=" + str(self.max_size) + ", " + \
+               "text=" + self.text + ", font=" + str(self.font) + ", focused=" + str(self.focused) + ", " + \
+               "border=" + str(self.border) + ", visible=" + str(self.visible) + ", " + \
+               "allow_focus=" + str(self.allow_focus) + "]"
 
 
 class GUIImage(GUIComponent):
@@ -1058,7 +1176,22 @@ class GUIImage(GUIComponent):
 
             resources.shader_sprite.set_uniform(ShaderProgram.UNIFORM_PROJECTION, projection.matrix)
             resources.shader_sprite.set_uniform(ShaderProgram.UNIFORM_POSITION, position.matrix)
-            resources.model_sprite.render()
+            resources.render_model(resources.model_sprite)
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUIImage[bounds=" + str(self.bounds) + ", max_size=" + str(self.max_size) + ", " + \
+               "sprite_set=" + self.sprite_set + ", id_animation=" + str(self.id_animation) + ", " + \
+               "focused=" + str(self.focused) + ", border=" + str(self.border) + ", " + \
+               "visible=" + str(self.visible) + ", allow_focus=" + str(self.allow_focus) + "]"
 
 
 class GUITextField(GUIComponent):
@@ -1173,7 +1306,7 @@ class GUITextField(GUIComponent):
                 ))
 
                 resources.shader_sprite.set_uniform(ShaderProgram.UNIFORM_POSITION, position.matrix)
-                resources.model_sprite.render()
+                resources.render_model(resources.model_sprite)
 
     def input_key(self, key_code: int) -> None:
         """
@@ -1192,6 +1325,21 @@ class GUITextField(GUIComponent):
 
             if char is not None:
                 self.text += char
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUITextField[bounds=" + str(self.bounds) + ", max_size=" + str(self.max_size) + ", " + \
+               "text=" + self.text + ", font=" + str(self.font) + ", focused=" + str(self.focused) + ", " + \
+               "border=" + str(self.border) + ", visible=" + str(self.visible) + ", " + \
+               "allow_focus=" + str(self.allow_focus) + "]"
 
 
 class GUIEvent(CancelableEvent):
@@ -1233,6 +1381,19 @@ class GUIEvent(CancelableEvent):
 
         self.component = component
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUIEvent[tick=" + str(self.tick) + ", component=" + str(self.component) + ", " + \
+               "canceled=" + str(self._canceled) + "]"
+
 
 class GUIFocusedEvent(GUIEvent):
     """
@@ -1254,6 +1415,19 @@ class GUIFocusedEvent(GUIEvent):
     is_canceled()
         Returns whether or not the event got canceled.
     """
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUIFocusedEvent[tick=" + str(self.tick) + ", component=" + str(self.component) + ", " + \
+               "canceled=" + str(self._canceled) + "]"
 
 
 class GUIUnfocusedEvent(GUIEvent):
@@ -1277,12 +1451,30 @@ class GUIUnfocusedEvent(GUIEvent):
         Returns whether or not the event got canceled.
     """
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUIUnfocusedEvent[tick=" + str(self.tick) + ", component=" + str(self.component) + ", " + \
+               "canceled=" + str(self._canceled) + "]"
+
 
 class GUIManager:
     """
     The main GUI holder.
 
     This is the entry point of the GUI. It contains the main container.
+
+    Attributes
+    ----------
+    children: list of GUIComponent
+        The list of components of the main container.
 
     Methods
     -------
@@ -1331,6 +1523,27 @@ class GUIManager:
 
         self._container = GUIContainer(AxisAlignedBoundingBox((0, 0), self._viewport * 2), GUIAbsoluteLayout())
 
+    @property
+    def children(self) -> list:
+        """
+        The children property containing the children components of the container.
+        """
+
+        return self._container.children
+
+    @children.setter
+    def children(self, children: list) -> None:
+        """
+        Setter function for the children list.
+
+        Parameters
+        ----------
+        children: list of GUIComponent
+            This list of children components of the container.
+        """
+
+        self._container.children = children
+
     def render(self) -> None:
         """
         Renders the GUI.
@@ -1349,18 +1562,6 @@ class GUIManager:
         """
 
         self._container.fire_events(tick, self._event_queue)
-
-    def add_child(self, component: GUIComponent) -> None:
-        """
-        Adds a new component to the GUI.
-
-        Parameters
-        ----------
-        component: GUIComponent
-            The new component.
-        """
-
-        self._container.add_child(component)
 
     def give_focus(self, pointer: numpy.ndarray) -> bool:
         """
@@ -1421,4 +1622,17 @@ class GUIManager:
         """
 
         if event.button == MouseButton.MOUSE_BUTTON_LEFT:
-            self.give_focus(event.position)
+            if self.give_focus(event.position):
+                event.cancel()
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "GUIManager[container=" + str(self._container) + "]"

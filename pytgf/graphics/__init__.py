@@ -4,7 +4,7 @@ game without rendering.
 """
 
 from pytgf.graphics.graphics import Camera, Texture, ShaderProgram, SpriteSet, TileSet, ResourceManager, RenderLoop, \
-    WorldRenderer
+    WorldRenderer, ProjectionMatrix
 
 from pytgf.graphics.gui import GUIFont, GUIBorder, GUIComponent, GUILayout, GUIAbsoluteLayout, GUIListLayout, \
     GUIContainer, GUILabel, GUIImage, GUITextField, GUIEvent, GUIFocusedEvent, GUIUnfocusedEvent, GUIManager
@@ -46,8 +46,6 @@ class Game(LogicGame):
         Runs the game logic loop.
     reset()
         Resets the game.
-    close()
-        Closes the game.
     change_world(tiles, background, logic_area, logic_tile, logic_entity, entity_per_thread, node_capacity, max_depth)
         Creates a new world.
     fire_event(event)
@@ -97,7 +95,7 @@ class Game(LogicGame):
     def __init__(self, tile_size: int, viewport: [tuple, numpy.ndarray], scale: float = 1.0, standalone: bool = True,
                  width: int = 800, height: int = 600, glsl_version: int = 330, shader_world: tuple = None,
                  shader_sprite: tuple = None, tick_per_second: float = 60, frame_per_second: float = 60,
-                 multi_threading: bool = True, default_tile_collision_handler: bool = True,
+                 multi_threading: bool = True, safe_mode: bool = True, default_tile_collision_handler: bool = True,
                  default_entity_collision_handler: bool = True, default_gui_handler: bool = True):
         """
         Initializes the Game.
@@ -130,6 +128,8 @@ class Game(LogicGame):
             The frame rate of the loop. It correspond to the number of times the frame will be rendered per second.
         multi_threading: bool, optional
             Enables the multi-threading mode if set to True.
+        safe_mode: bool, optional
+            Enables the update function safe mode (preventing infinite loop) if set to True.
         default_tile_collision_handler: bool, optional
             Registers the default tile collision event handler if set to True.
         default_entity_collision_handler: bool, optional
@@ -145,7 +145,7 @@ class Game(LogicGame):
             )
 
         if not hasattr(self, "_loop"):
-            self._loop = RenderLoop(tick_per_second, frame_per_second, self.update, self.render, self.close)
+            self._loop = RenderLoop(tick_per_second, frame_per_second, self.update, self.render)
 
         self.camera = Camera(viewport)
 
@@ -154,7 +154,7 @@ class Game(LogicGame):
         self._world_renderer = None
 
         LogicGame.__init__(
-            self, tile_size, tick_per_second=tick_per_second, multi_threading=multi_threading,
+            self, tile_size, tick_per_second=tick_per_second, multi_threading=multi_threading, safe_mode=safe_mode,
             default_tile_collision_handler=default_tile_collision_handler,
             default_entity_collision_handler=default_entity_collision_handler
         )
@@ -192,7 +192,7 @@ class Game(LogicGame):
         self.gui.render()
 
     def change_world(self, tiles: numpy.ndarray, background: str, logic_area: AxisAlignedBoundingBox = None,
-                     logic_tile: bool = True, logic_entity: bool = True, safe_mode: bool = True,
+                     logic_tile: bool = True, logic_entity: bool = True,
                      entity_per_thread: int = WorldUpdater.DEFAULT_ENTITY_PER_THREAD,
                      node_capacity: int = QuadTree.DEFAULT_NODE_CAPACITY,
                      max_depth: int = QuadTree.DEFAULT_MAX_DEPTH) -> None:
@@ -213,8 +213,6 @@ class Game(LogicGame):
             Enables the collision detection with the tiles if set to True.
         logic_entity: bool, optional
             Enables the collision detection with the entities is set to True.
-        safe_mode: bool, optional
-            Enables the update function safe mode (preventing infinite loop) if set to True.
         entity_per_thread: int, optional
             The number of entity in each thread.
         node_capacity: int, optional
@@ -225,10 +223,36 @@ class Game(LogicGame):
 
         super().change_world(
             tiles, background, logic_area=logic_area, logic_tile=logic_tile, logic_entity=logic_entity,
-            safe_mode=safe_mode, entity_per_thread=entity_per_thread, node_capacity=node_capacity, max_depth=max_depth
+            entity_per_thread=entity_per_thread, node_capacity=node_capacity, max_depth=max_depth
         )
 
         self._world_renderer = WorldRenderer(self.resources, self.world)
+
+    def transform_world(self, position: numpy.ndarray) -> numpy.ndarray:
+        """
+        Transforms the position vector into the camera coordinate system.
+
+        Transforms the coordinate of a point expressed in the screen referential to the local camera coordinate system.
+
+        Parameters
+        ----------
+        position: numpy.ndarray
+            The screen relative position vector.
+
+        Returns
+        -------
+        transformed_position: numpy.ndarray
+            The new position vector expressed in the camera coordinate system.
+        """
+
+        transform = ProjectionMatrix(self.camera.projection_matrix.matrix).scale(
+            (self.resources.scale, self.resources.scale)
+        ).inverse_transform(position)
+
+        transform[0] = - transform[0] + self.camera.position[0]
+        transform[1] = self.camera.position[1] + transform[1]
+
+        return transform
 
     def register_gui_event_handler(self, handler: callable) -> None:
         """
@@ -272,3 +296,17 @@ class Game(LogicGame):
         """
 
         self.register_event_handler(GUIUnfocusedEvent, handler)
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "Game[input_handler=" + str(self.input_handler) + ", resources=" + str(self.resources) + ", " + \
+               "world=" + str(self.world) + ", camera=" + str(self.camera) + ", gui=" + str(self.gui) + ", " + \
+               "multi_threading=" + str(self._multi_threading) + ", safe_mode=" + str(self._safe_mode) + "]"

@@ -7,4 +7,4 @@ from pytgf.logic import *
 from pytgf.graphics import *
 from pytgf.window import *
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"

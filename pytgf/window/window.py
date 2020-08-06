@@ -124,6 +124,7 @@ class Window(InputHandler):
         self._window.on_mouse_press = self._on_mouse_pressed
         self._window.on_mouse_release = self._on_mouse_released
         self._window.on_mouse_motion = self._on_mouse_moved
+        self._window.on_mouse_drag = self._on_mouse_dragged
         self._window.on_close = self._on_close
 
         self.should_close = False
@@ -208,7 +209,33 @@ class Window(InputHandler):
             The displacement of the mouse pointer along the y axis (unused).
         """
 
-        if 0 <= x < self._width and 0 <= y < self._height:
+        if 0 <= x <= self._width and 0 <= y <= self._height:
+            x = 2 * (x - self._width / 2) / self._width
+            y = 2 * (y - self._height / 2) / self._height
+
+            self.move_mouse(numpy.array((x, y), dtype=float))
+
+    def _on_mouse_dragged(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
+        """
+        Callback function updating the position of the mouse
+
+        Parameters
+        ----------
+        x: int
+            The position of the mouse pointer along the x axis.
+        y: int
+            The position of the mouse pointer along the y axis.
+        dx: int
+            The displacement of the mouse pointer along the x axis (unused).
+        dy: int
+            The displacement of the mouse pointer along the y axis (unused).
+        button: int
+            The code of the released mouse button. (unused)
+        modifiers:
+            A bitwise combination of the active key modifiers (unused).
+        """
+
+        if 0 <= x <= self._width and 0 <= y <= self._height:
             x = 2 * (x - self._width / 2) / self._width
             y = 2 * (y - self._height / 2) / self._height
 
@@ -246,6 +273,19 @@ class Window(InputHandler):
         self._window.dispatch_events()
 
         super().fire_events(tick)
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "Window[width=" + str(self._width) + ", height=" + str(self._height) + ", " + \
+               "should_close=" + str(self.should_close) + "]"
 
 
 class AssetManager(ResourceManager):
@@ -402,13 +442,16 @@ class AssetManager(ResourceManager):
         Updates the internal clock.
         """
 
+        if self._music_player is None:
+            return
+
         pyglet.clock.tick()
 
         if self._music_stack > 0:
             self._music_stack -= 1
 
             if self._music_stack <= 0:
-                self.play_music(self._music_played)
+                self.play_music(self._music_played, self._music_volume)
 
     def register_music(self, name: str, path: str) -> None:
         """
@@ -482,13 +525,6 @@ class AssetManager(ResourceManager):
         player = self._effects[name].play()
         player.volume = self._volume * volume
 
-    def clear(self) -> None:
-        """
-        Clears the music player.
-        """
-
-        del self._music_player
-
 
 class WindowRenderLoop(RenderLoop):
     """
@@ -505,7 +541,7 @@ class WindowRenderLoop(RenderLoop):
     """
 
     def __init__(self, tick_per_second: float, frame_per_second: float, function_logic: callable,
-                 function_render: callable, function_error: callable, window: Window):
+                 function_render: callable, window: Window):
         """
         Initializes the WindowRenderLoop
 
@@ -519,13 +555,11 @@ class WindowRenderLoop(RenderLoop):
             The logic function of the loop called each tick.
         function_render: callable
             The render function of the loop called each frame.
-        function_error: callable
-            The error function called whenever an exception occurs within the loop.
         window: Window
             The window in which the game is displayed.
         """
 
-        RenderLoop.__init__(self, tick_per_second, frame_per_second, function_logic, function_render, function_error)
+        RenderLoop.__init__(self, tick_per_second, frame_per_second, function_logic, function_render)
 
         self._window = window
 
@@ -537,3 +571,16 @@ class WindowRenderLoop(RenderLoop):
         super()._do_render()
 
         self._window.render()
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "RenderLoop[tick=" + str(self._tick) + ", frame=" + str(self._frame) + ", " + \
+               "window=" + str(self._window) + ", running=" + str(self._running) + "]"

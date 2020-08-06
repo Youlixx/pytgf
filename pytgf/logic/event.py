@@ -32,6 +32,18 @@ class Event:
 
         self.tick = tick
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "Event[tick=" + str(self.tick) + "]"
+
 
 class CancelableEvent(Event):
     """
@@ -87,6 +99,18 @@ class CancelableEvent(Event):
         """
 
         return self._canceled
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "CancelableEvent[tick=" + str(self.tick) + ", canceled=" + str(self._canceled) + "]"
 
 
 class EventQueue:
@@ -181,6 +205,18 @@ class EventQueue:
                         handler(event)
                 else:
                     handler(event)
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "EventQueue[]"
 
 
 class Key:
@@ -441,6 +477,18 @@ class InputEvent(CancelableEvent):
     is_canceled()
         Returns whether or not the event got canceled.
     """
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "InputEvent[tick=" + str(self.tick) + ", canceled=" + str(self._canceled) + "]"
     
 
 class KeyEvent(InputEvent):
@@ -482,6 +530,18 @@ class KeyEvent(InputEvent):
 
         self.key = key
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "KeyEvent[tick=" + str(self.tick) + ", key=" + str(self.key) + ", canceled=" + str(self._canceled) + "]"
+
 
 class KeyPressedEvent(KeyEvent):
     """
@@ -504,6 +564,19 @@ class KeyPressedEvent(KeyEvent):
     is_canceled()
         Returns whether or not the event got canceled.
     """
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "KeyPressedEvent[tick=" + str(self.tick) + ", key=" + str(self.key) + ", " + \
+               "canceled=" + str(self._canceled) + "]"
 
 
 class KeyReleasedEvent(KeyEvent):
@@ -528,6 +601,19 @@ class KeyReleasedEvent(KeyEvent):
         Returns whether or not the event got canceled.
     """
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "KeyReleasedEvent[tick=" + str(self.tick) + ", key=" + str(self.key) + ", " + \
+               "canceled=" + str(self._canceled) + "]"
+
 
 class KeyTypedEvent(KeyEvent):
     """
@@ -550,6 +636,19 @@ class KeyTypedEvent(KeyEvent):
     is_canceled()
         Returns whether or not the event got canceled.
     """
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "KeyTypedEvent[tick=" + str(self.tick) + ", key=" + str(self.key) + ", " + \
+               "canceled=" + str(self._canceled) + "]"
 
 
 class KeyHeldEvent(KeyEvent):
@@ -593,6 +692,19 @@ class KeyHeldEvent(KeyEvent):
         KeyEvent.__init__(self, tick, key)
         
         self.duration = duration
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "KeyHeldEvent[tick=" + str(self.tick) + ", key=" + str(self.key) + ", " + \
+               "duration=" + str(self.duration) + ", canceled=" + str(self._canceled) + "]"
         
 
 class MouseEvent(InputEvent):
@@ -634,6 +746,19 @@ class MouseEvent(InputEvent):
         CancelableEvent.__init__(self, tick)
         
         self.position = position
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "MouseEvent[tick=" + str(self.tick) + ", position=" + str(self.position) + ", " + \
+               "canceled=" + str(self._canceled) + "]"
         
 
 class MouseMovedEvent(MouseEvent):
@@ -656,6 +781,19 @@ class MouseMovedEvent(MouseEvent):
     is_canceled()
         Returns whether or not the event got canceled.
     """
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "MouseMovedEvent[tick=" + str(self.tick) + ", position=" + str(self.position) + ", " + \
+               "canceled=" + str(self._canceled) + "]"
         
 
 class MouseButtonEvent(MouseEvent):
@@ -701,6 +839,19 @@ class MouseButtonEvent(MouseEvent):
         
         self.button = button
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "MouseButtonEvent[tick=" + str(self.tick) + ", button=" + str(self.button) + ", " + \
+               "position=" + str(self.position) + ", canceled=" + str(self._canceled) + "]"
+
 
 class MouseButtonPressedEvent(MouseButtonEvent):
     """
@@ -725,6 +876,19 @@ class MouseButtonPressedEvent(MouseButtonEvent):
     is_canceled()
         Returns whether or not the event got canceled.
     """
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "MouseButtonPressedEvent[tick=" + str(self.tick) + ", button=" + str(self.button) + ", " + \
+               "position=" + str(self.position) + ", canceled=" + str(self._canceled) + "]"
 
 
 class MouseButtonReleasedEvent(MouseButtonEvent):
@@ -751,6 +915,19 @@ class MouseButtonReleasedEvent(MouseButtonEvent):
         Returns whether or not the event got canceled.
     """
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "MouseButtonReleasedEvent[tick=" + str(self.tick) + ", button=" + str(self.button) + ", " + \
+               "position=" + str(self.position) + ", canceled=" + str(self._canceled) + "]"
+
 
 class MouseButtonClickedEvent(MouseButtonEvent):
     """
@@ -775,6 +952,19 @@ class MouseButtonClickedEvent(MouseButtonEvent):
     is_canceled()
         Returns whether or not the event got canceled.
     """
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "MouseButtonClickedEvent[tick=" + str(self.tick) + ", button=" + str(self.button) + ", " + \
+               "position=" + str(self.position) + ", canceled=" + str(self._canceled) + "]"
 
 
 class MouseDraggedEvent(MouseButtonEvent):
@@ -823,6 +1013,20 @@ class MouseDraggedEvent(MouseButtonEvent):
         MouseButtonEvent.__init__(self, tick, button, position)
 
         self.duration = duration
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "MouseButtonDraggedEvent[tick=" + str(self.tick) + ", button=" + str(self.button) + ", " + \
+               "duration=" + str(self.duration) + ", position=" + str(self.position) + ", " + \
+               "canceled=" + str(self._canceled) + "]"
 
 
 class InputHandler:
@@ -1078,6 +1282,18 @@ class InputHandler:
 
         self._mouse_previous_position = self.mouse_position
 
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "InputHandler[mouse_position=" + str(self.mouse_position) + "]"
+
 
 class InputReplay:
     """
@@ -1138,6 +1354,18 @@ class InputReplay:
                     input_handler.mouse_button_release(mouse_button=event[1])
                 elif event[0] == InputReplay.EVENT_MOUSE_MOVE:
                     input_handler.move_mouse(position=numpy.ndarray(event[1]))
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "InputReplay[tick=" + str(self._tick) + "]"
 
 
 class InputRecorder:
@@ -1288,3 +1516,15 @@ class InputRecorder:
         """
 
         return InputReplay(self.inputs, replay_tick)
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "InputRecorder[tick=" + str(self._record_tick) + "]"

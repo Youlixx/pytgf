@@ -42,8 +42,6 @@ class LogicGame(EventQueue):
         Runs the game logic loop.
     reset()
         Resets the game.
-    close()
-        Closes the game.
     change_world(tiles, background, logic_area, logic_tile, logic_entity, entity_per_thread, node_capacity, max_depth)
         Creates a new world.
     fire_event(event)
@@ -85,7 +83,8 @@ class LogicGame(EventQueue):
     """
 
     def __init__(self, tile_size: int, tick_per_second: float = 60.0, multi_threading: bool = True,
-                 default_tile_collision_handler: bool = True, default_entity_collision_handler: bool = True):
+                 safe_mode: bool = True, default_tile_collision_handler: bool = True,
+                 default_entity_collision_handler: bool = True):
         """
         Initializes the LogicGame.
 
@@ -97,6 +96,8 @@ class LogicGame(EventQueue):
             The tick rate of the loop. It correspond to the number of times the logic will be performed per second.
         multi_threading: bool, optional
             Enables the multi-threading mode if set to True.
+        safe_mode: bool, optional
+            Enables the update function safe mode (preventing infinite loop) if set to True.
         default_tile_collision_handler: bool, optional
             Registers the default tile collision event handler if set to True.
         default_entity_collision_handler: bool, optional
@@ -112,9 +113,10 @@ class LogicGame(EventQueue):
             self.resources = TileManager(tile_size)
 
         if not hasattr(self, "_loop"):
-            self._loop = LogicLoop(tick_per_second, self.update, self.close)
+            self._loop = LogicLoop(tick_per_second, self.update)
 
         self._multi_threading = multi_threading
+        self._safe_mode = safe_mode
 
         if default_tile_collision_handler:
             self.register_collision_tile_event_handler(CollisionWithTileEvent.default_handler_collision_tile)
@@ -156,10 +158,7 @@ class LogicGame(EventQueue):
 
     def stop(self) -> None:
         """
-
-        Returns
-        -------
-
+        Stops the game logic loop.
         """
 
         self._loop.stop()
@@ -169,15 +168,8 @@ class LogicGame(EventQueue):
         Resets the game (this function is called on the initialization).
         """
 
-    def close(self) -> None:
-        """
-        Closes the game (this function should clean up the memory).
-        """
-
-        self.stop()
-
     def change_world(self, tiles: numpy.ndarray, background: str, logic_area: AxisAlignedBoundingBox = None,
-                     logic_tile: bool = True, logic_entity: bool = True, safe_mode: bool = True,
+                     logic_tile: bool = True, logic_entity: bool = True,
                      entity_per_thread: int = WorldUpdater.DEFAULT_ENTITY_PER_THREAD,
                      node_capacity: int = QuadTree.DEFAULT_NODE_CAPACITY,
                      max_depth: int = QuadTree.DEFAULT_MAX_DEPTH) -> None:
@@ -198,8 +190,6 @@ class LogicGame(EventQueue):
             Enables the collision detection with the tiles if set to True.
         logic_entity: bool, optional
             Enables the collision detection with the entities is set to True.
-        safe_mode: bool, optional
-            Enables the update function safe mode (preventing infinite loop) if set to True.
         entity_per_thread: int, optional
             The number of entity in each thread.
         node_capacity: int, optional
@@ -210,7 +200,7 @@ class LogicGame(EventQueue):
 
         self.world = World(
             self.resources, self, tiles, background, logic_area=logic_area, logic_tile=logic_tile,
-            logic_entity=logic_entity, multi_threading=self._multi_threading, safe_mode=safe_mode,
+            logic_entity=logic_entity, multi_threading=self._multi_threading, safe_mode=self._safe_mode,
             entity_per_thread=entity_per_thread, node_capacity=node_capacity, max_depth=max_depth
         )
 
@@ -444,3 +434,24 @@ class LogicGame(EventQueue):
         """
 
         self.register_event_handler(MouseDraggedEvent, handler)
+
+    def __del__(self) -> None:
+        """
+        Closes the game (this function should clean up the memory).
+        """
+
+        self.stop()
+
+    def __str__(self) -> str:
+        """
+        Returns a description string of the object.
+
+        Returns
+        -------
+        string: str
+            The string object description.
+        """
+
+        return "LogicGame[input_handler=" + str(self.input_handler) + ", resources=" + str(self.resources) + ", " + \
+               "world=" + str(self.world) + ", multi_threading=" + str(self._multi_threading) + ", " + \
+               "safe_mode=" + str(self._safe_mode) + "]"
